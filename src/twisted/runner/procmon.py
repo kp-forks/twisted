@@ -15,6 +15,7 @@ from twisted.internet import error, protocol, reactor as _reactor
 from twisted.logger import Logger
 from twisted.protocols import basic
 from twisted.python import deprecate
+from twisted.python.failure import Failure
 
 
 @attr.s(frozen=True, auto_attribs=True)
@@ -124,7 +125,7 @@ class LoggingProtocol(protocol.ProcessProtocol):
             self._output.dataReceived(b"\n")
         if not self._errorEmpty:
             self._error.dataReceived(b"\n")
-        self.service.connectionLost(self.name)
+        self.service.connectionLost(self.name, reason)
 
     @property
     def output(self):
@@ -286,7 +287,7 @@ class ProcessMonitor(service.Service):
         for name in list(self._processes):
             self.stopProcess(name)
 
-    def connectionLost(self, name):
+    def connectionLost(self, name, reason):
         """
         Called when a monitored processes exits. If
         L{service.IService.running} is L{True} (ie the service is started), the
@@ -301,6 +302,8 @@ class ProcessMonitor(service.Service):
         @type name: C{str}
         @param name: A string that uniquely identifies the process
             which exited.
+        @type reason: C{Failure}
+        @param reason: The reason why the connection was lost.
         """
         # Cancel the scheduled _forceStopProcess function if the process
         # dies naturally
@@ -353,9 +356,9 @@ class ProcessMonitor(service.Service):
                 gid=process.gid,
                 env=process.env,
                 path=process.cwd,
-            )
-        except OSError:
-            self.connectionLost(name)
+           )
+        except OSError as e:
+            self.connectionLost(name, Failure(e))
 
     def _forceStopProcess(self, proc):
         """

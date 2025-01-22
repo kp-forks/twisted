@@ -4,6 +4,8 @@
 """
 Tests for L{twisted.runner.procmon}.
 """
+import errno
+import os
 import pickle
 
 from twisted.internet.error import ProcessDone, ProcessExitedAlready, ProcessTerminated
@@ -94,6 +96,9 @@ class DummyProcessReactor(MemoryReactor, Clock):
     @ivar spawnedProcesses: a list that keeps track of the fake process
         instances built by C{spawnProcess}.
     @type spawnedProcesses: C{list}
+
+    @ivar spawnProcessException: An exception which spawnProcess() will raise.
+    @type spawnProcessException: C{Exception}
     """
 
     def __init__(self):
@@ -102,8 +107,7 @@ class DummyProcessReactor(MemoryReactor, Clock):
 
         self.spawnedProcesses = []
 
-        # set flag to make spawnProcess OSError
-        self._spawn_resource_unavailable = False
+        self.spawnProcessException = None
 
     def spawnProcess(
         self,
@@ -121,8 +125,8 @@ class DummyProcessReactor(MemoryReactor, Clock):
         Fake L{reactor.spawnProcess}, that logs all the process
         arguments and returns a L{DummyProcess}.
         """
-        if self._spawn_resource_unavailable:
-            raise BlockingIOError("[Errno 35] Resource temporarily unavailable")
+        if self.spawnProcessException:
+            raise self.spawnProcessException
 
         proc = DummyProcess(
             self,
@@ -284,15 +288,27 @@ class ProcmonTests(unittest.TestCase):
         """
         self.assertRaises(KeyError, self.pm.startProcess, "foo")
 
-    def test_startProcessSpawnException(self):
+    def test_startProcessSpawnCaughtException(self):
         """
         L{IReactorProcess.spawnProcess} might raise C{OSError}, ensure it
-        is caught and process is restarted
+        is caught and process is restarted.
         """
-        self.reactor._spawn_resource_unavailable = True
+        self.reactor.spawnProcessException = OSError(errno.EAGAIN, os.strerror(errno.EAGAIN))
+        self.pm.minRestartDelay = 123
+        self.pm.maxRestartDelay = 123
         self.pm.addProcess("foo", ["foo"])
         self.pm.startProcess("foo")
-        self.assertEquals(self.pm.delay["foo"], 4)
+        # process will be restarted in 123 seconds, per minRestartDelay and maxRestartDelay above
+        self.assertEquals(self.pm.delay["foo"], 123)
+
+    def test_startProcessSpawnUncaughtException(self):
+        """
+        L{IReactorProcess.spawnProcess} might raise C{OSError}, ensure other
+        exceptions are not caught.
+        """
+        self.reactor.spawnProcessException = SystemError('Just another exception')
+        self.pm.addProcess("foo", ["foo"])
+        self.assertRaises(SystemError, self.pm.startProcess, "foo")
 
     def test_stopProcessNaturalTermination(self):
         """
