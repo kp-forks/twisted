@@ -356,7 +356,7 @@ class ProcessMonitor(service.Service):
                 gid=process.gid,
                 env=process.env,
                 path=process.cwd,
-           )
+            )
         except OSError as e:
             self.connectionLost(name, Failure(e))
 

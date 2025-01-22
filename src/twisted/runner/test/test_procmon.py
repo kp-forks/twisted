@@ -293,7 +293,9 @@ class ProcmonTests(unittest.TestCase):
         L{IReactorProcess.spawnProcess} might raise C{OSError}, ensure it
         is caught and process is restarted.
         """
-        self.reactor.spawnProcessException = OSError(errno.EAGAIN, os.strerror(errno.EAGAIN))
+        self.reactor.spawnProcessException = OSError(
+            errno.EAGAIN, os.strerror(errno.EAGAIN)
+        )
         self.pm.minRestartDelay = 123
         self.pm.maxRestartDelay = 123
         self.pm.addProcess("foo", ["foo"])
@@ -306,7 +308,7 @@ class ProcmonTests(unittest.TestCase):
         L{IReactorProcess.spawnProcess} might raise C{OSError}, ensure other
         exceptions are not caught.
         """
-        self.reactor.spawnProcessException = SystemError('Just another exception')
+        self.reactor.spawnProcessException = SystemError("Just another exception")
         self.pm.addProcess("foo", ["foo"])
         self.assertRaises(SystemError, self.pm.startProcess, "foo")
 
