@@ -344,15 +344,18 @@ class ProcessMonitor(service.Service):
         proto.name = name
         self.protocols[name] = proto
         self.timeStarted[name] = self._reactor.seconds()
-        self._reactor.spawnProcess(
-            proto,
-            process.args[0],
-            process.args,
-            uid=process.uid,
-            gid=process.gid,
-            env=process.env,
-            path=process.cwd,
-        )
+        try:
+            self._reactor.spawnProcess(
+                proto,
+                process.args[0],
+                process.args,
+                uid=process.uid,
+                gid=process.gid,
+                env=process.env,
+                path=process.cwd,
+            )
+        except OSError as e:
+            self.connectionLost(name)
 
     def _forceStopProcess(self, proc):
         """
