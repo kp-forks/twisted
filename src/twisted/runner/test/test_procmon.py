@@ -102,6 +102,9 @@ class DummyProcessReactor(MemoryReactor, Clock):
 
         self.spawnedProcesses = []
 
+        # set flag to make spawnProcess OSError
+        self._spawn_resource_unavailable = False
+
     def spawnProcess(
         self,
         processProtocol,
@@ -118,6 +121,8 @@ class DummyProcessReactor(MemoryReactor, Clock):
         Fake L{reactor.spawnProcess}, that logs all the process
         arguments and returns a L{DummyProcess}.
         """
+        if self._spawn_resource_unavailable:
+            raise BlockingIOError('[Errno 35] Resource temporarily unavailable')
 
         proc = DummyProcess(
             self,
@@ -278,6 +283,16 @@ class ProcmonTests(unittest.TestCase):
         process name isn't recognised.
         """
         self.assertRaises(KeyError, self.pm.startProcess, "foo")
+
+    def test_startProcessSpawnException(self):
+        """
+        L{IReactorProcess.spawnProcess} might raise C{OSError}, ensure it
+        is caught and process is restarted
+        """
+        self.reactor._spawn_resource_unavailable = True
+        self.pm.addProcess("foo", ["foo"])
+        self.pm.startProcess("foo")
+        self.assertEquals(self.pm.delay["foo"], 4)
 
     def test_stopProcessNaturalTermination(self):
         """
