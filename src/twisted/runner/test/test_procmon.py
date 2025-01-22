@@ -122,7 +122,7 @@ class DummyProcessReactor(MemoryReactor, Clock):
         arguments and returns a L{DummyProcess}.
         """
         if self._spawn_resource_unavailable:
-            raise BlockingIOError('[Errno 35] Resource temporarily unavailable')
+            raise BlockingIOError("[Errno 35] Resource temporarily unavailable")
 
         proc = DummyProcess(
             self,
