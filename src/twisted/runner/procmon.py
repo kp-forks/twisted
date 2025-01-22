@@ -354,7 +354,7 @@ class ProcessMonitor(service.Service):
                 env=process.env,
                 path=process.cwd,
             )
-        except OSError as e:
+        except OSError:
             self.connectionLost(name)
 
     def _forceStopProcess(self, proc):
