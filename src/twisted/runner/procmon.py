@@ -326,7 +326,9 @@ class ProcessMonitor(service.Service):
         """
         # Log a warning if reason is something other than ProcessDone
         if reason and not reason.check(error.ProcessDone):
-            self.log.warn("Process '{name}' has exited: {reason!r}", name=name, reason=reason)
+            self.log.warn(
+                "Process '{name}' has exited: {reason!r}", name=name, reason=reason
+            )
         # Cancel the scheduled _forceStopProcess function if the process
         # dies naturally
         if name in self.murder:
