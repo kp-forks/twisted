@@ -500,7 +500,7 @@ class ProcmonTests(unittest.TestCase):
 
     def test_connectionLostLongLivedProcess(self):
         """
-        L{ProcessMonitor.connectionLost} should immediately restart a process
+        L{ProcessMonitor.processExit} should immediately restart a process
         if it has been running longer than L{ProcessMonitor.threshold} seconds.
         """
         self.pm.addProcess("foo", ["foo"])
@@ -520,7 +520,7 @@ class ProcmonTests(unittest.TestCase):
 
     def test_connectionLostMurderCancel(self):
         """
-        L{ProcessMonitor.connectionLost} cancels a scheduled process killer and
+        L{ProcessMonitor.processExit} cancels a scheduled process killer and
         deletes the DelayedCall from the L{ProcessMonitor.murder} list.
         """
         self.pm.addProcess("foo", ["foo"])
@@ -541,7 +541,7 @@ class ProcmonTests(unittest.TestCase):
 
     def test_connectionLostProtocolDeletion(self):
         """
-        L{ProcessMonitor.connectionLost} removes the corresponding
+        L{ProcessMonitor.processExit} removes the corresponding
         ProcessProtocol instance from the L{ProcessMonitor.protocols} list.
         """
         self.pm.startService()
@@ -553,7 +553,7 @@ class ProcmonTests(unittest.TestCase):
 
     def test_connectionLostMinMaxRestartDelay(self):
         """
-        L{ProcessMonitor.connectionLost} will wait at least minRestartDelay s
+        L{ProcessMonitor.processExit} will wait at least minRestartDelay s
         and at most maxRestartDelay s
         """
         self.pm.minRestartDelay = 2
@@ -569,7 +569,7 @@ class ProcmonTests(unittest.TestCase):
 
     def test_connectionLostBackoffDelayDoubles(self):
         """
-        L{ProcessMonitor.connectionLost} doubles the restart delay each time
+        L{ProcessMonitor.processExit} doubles the restart delay each time
         the process dies too quickly.
         """
         self.pm.startService()
