@@ -125,7 +125,7 @@ class LoggingProtocol(protocol.ProcessProtocol):
             self._output.dataReceived(b"\n")
         if not self._errorEmpty:
             self._error.dataReceived(b"\n")
-        self.service.connectionLost(self.name, reason)
+        self.service.processExit(self.name, reason)
 
     @property
     def output(self):
@@ -287,7 +287,26 @@ class ProcessMonitor(service.Service):
         for name in list(self._processes):
             self.stopProcess(name)
 
-    def connectionLost(self, name, reason):
+    @deprecate.deprecatedProperty(incremental.Version("Twisted", "NEXT", 0, 0))
+    def connectionLost(self, name):
+        """
+        Called when a monitored processes exits. If
+        L{service.IService.running} is L{True} (ie the service is started), the
+        process will be restarted.
+        If the process had been running for more than
+        L{ProcessMonitor.threshold} seconds it will be restarted immediately.
+        If the process had been running for less than
+        L{ProcessMonitor.threshold} seconds, the restart will be delayed and
+        each time the process dies before the configured threshold, the restart
+        delay will be doubled - up to a maximum delay of maxRestartDelay sec.
+
+        @type name: C{str}
+        @param name: A string that uniquely identifies the process
+            which exited.
+        """
+        return self.processExit(name)
+
+    def processExit(self, name, reason=None):
         """
         Called when a monitored processes exits. If
         L{service.IService.running} is L{True} (ie the service is started), the
@@ -305,6 +324,9 @@ class ProcessMonitor(service.Service):
         @type reason: C{Failure}
         @param reason: The reason why the connection was lost.
         """
+        # Log a warning if reason is something other than ProcessDone
+        if reason and not reason.check(error.ProcessDone):
+            self.log.warn("Process '{name}' has exited: {reason!r}", name=name, reason=reason)
         # Cancel the scheduled _forceStopProcess function if the process
         # dies naturally
         if name in self.murder:
@@ -358,7 +380,7 @@ class ProcessMonitor(service.Service):
                 path=process.cwd,
             )
         except OSError:
-            self.connectionLost(name, Failure())
+            self.processExit(name, Failure())
 
     def _forceStopProcess(self, proc):
         """
