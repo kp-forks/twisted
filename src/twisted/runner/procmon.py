@@ -304,7 +304,7 @@ class ProcessMonitor(service.Service):
         @param name: A string that uniquely identifies the process
             which exited.
         """
-        return self.processExit(name) # pragma: no cover
+        return self.processExit(name)  # pragma: no cover
 
     def processExit(self, name, reason=None):
         """
