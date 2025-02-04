@@ -303,7 +303,7 @@ class ProcmonTests(unittest.TestCase):
         # process will be restarted in 123 seconds, per minRestartDelay and maxRestartDelay above
         self.assertEquals(self.pm.delay["foo"], 123)
 
-    def test_startProcessSpawnUncaughtException(self):
+    def test_startProcessSpawnUncaughtException(self) -> None:
         """
         L{IReactorProcess.spawnProcess} might raise C{OSError}, ensure other
         exceptions are not caught.
