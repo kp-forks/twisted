@@ -125,7 +125,7 @@ class DummyProcessReactor(MemoryReactor, Clock):
         Fake L{reactor.spawnProcess}, that logs all the process
         arguments and returns a L{DummyProcess}.
         """
-        if self.spawnProcessException:
+        if self.spawnProcessException is not None:
             raise self.spawnProcessException
 
         proc = DummyProcess(
