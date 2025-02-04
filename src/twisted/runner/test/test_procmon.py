@@ -107,7 +107,7 @@ class DummyProcessReactor(MemoryReactor, Clock):
 
         self.spawnedProcesses = []
 
-        self.spawnProcessException = None
+        self.spawnProcessException: Exception | None = None
 
     def spawnProcess(
         self,
