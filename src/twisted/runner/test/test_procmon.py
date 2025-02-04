@@ -288,7 +288,7 @@ class ProcmonTests(unittest.TestCase):
         """
         self.assertRaises(KeyError, self.pm.startProcess, "foo")
 
-    def test_startProcessSpawnCaughtException(self):
+    def test_startProcessSpawnCaughtException(self) -> None:
         """
         L{IReactorProcess.spawnProcess} might raise C{OSError}, ensure it
         is caught and process is restarted.
