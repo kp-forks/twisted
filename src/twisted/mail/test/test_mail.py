@@ -949,12 +949,8 @@ class VirtualPOP3Tests(TestCase):
         self.S = mail.mail.MailService()
         self.D = mail.maildir.MaildirDirdbmDomain(self.S, self.tmpdir)
         self.D.addUser(b"user", b"password")
-        self.S.addDomain("test.domain", self.D)
-
-        portal = cred.portal.Portal(self.D)
-        map(portal.registerChecker, self.D.getCredentialsCheckers())
-        self.S.portals[b""] = self.S.portals[b"test.domain"] = portal
-
+        self.S.addDomain(b"test.domain", self.D)
+        self.S.addDomain(b"", self.D)
         self.P = mail.protocols.VirtualPOP3()
         self.P.service = self.S
         self.P.magic = b"<unit test magic>"
