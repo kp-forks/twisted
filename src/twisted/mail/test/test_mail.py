@@ -4,6 +4,7 @@
 """
 Tests for large portions of L{twisted.mail}.
 """
+from __future__ import annotations
 
 import email.message
 import email.parser
