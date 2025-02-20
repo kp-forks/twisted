@@ -31,7 +31,7 @@ class DirDbmTests(unittest.TestCase):
         self.assertEqual(self.dbm[k], b"a")
 
     def test_rebuildInteraction(self) -> None:
-        s = dirdbm.Shelf("dirdbm.rebuild.test")
+        s = dirdbm.Shelf(b"dirdbm.rebuild.test")
         s[b"key"] = b"value"
         rebuild.rebuild(dirdbm)
 
