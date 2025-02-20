@@ -935,7 +935,7 @@ class ServiceDomainTests(TestCase):
 
 @skipIf(platformType != "posix", "twisted.mail only works on posix")
 class VirtualPOP3Tests(TestCase):
-    def setUp(self):
+    def setUp(self) -> None:
         self.tmpdir = self.mktemp()
         self.S = mail.mail.MailService()
         self.D = mail.maildir.MaildirDirdbmDomain(self.S, self.tmpdir)
@@ -944,11 +944,11 @@ class VirtualPOP3Tests(TestCase):
 
         portal = cred.portal.Portal(self.D)
         map(portal.registerChecker, self.D.getCredentialsCheckers())
-        self.S.portals[""] = self.S.portals["test.domain"] = portal
+        self.S.portals[b""] = self.S.portals[b"test.domain"] = portal
 
         self.P = mail.protocols.VirtualPOP3()
         self.P.service = self.S
-        self.P.magic = "<unit test magic>"
+        self.P.magic = b"<unit test magic>"
 
     def tearDown(self):
         shutil.rmtree(self.tmpdir)
@@ -980,9 +980,8 @@ class VirtualPOP3Tests(TestCase):
             self.P.authenticateUserAPOP("user", resp), cred.error.UnauthorizedLogin
         )
 
-    @skipIf(sys.version_info >= (3,), "not ported to Python 3")
-    def testAuthenticatePASS(self):
-        return self.P.authenticateUserPASS("user", "password").addCallback(
+    def testAuthenticatePASS(self) -> Deferred[object]:
+        return self.P.authenticateUserPASS(b"user", b"password").addCallback(
             self._cbAuthenticatePASS
         )
 

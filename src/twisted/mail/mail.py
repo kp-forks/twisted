@@ -5,6 +5,7 @@
 """
 Mail service support.
 """
+from __future__ import annotations
 
 # System imports
 import os
@@ -13,12 +14,8 @@ import warnings
 from zope.interface import implementer
 
 from twisted.application import internet, service
-from twisted.cred.portal import Portal
-
-# Twisted imports
+from twisted.cred.portal import IRealm, Portal
 from twisted.internet import defer
-
-# Sibling imports
 from twisted.mail import protocols, smtp
 from twisted.mail.interfaces import IAliasableDomain, IDomain
 from twisted.python import log, util
@@ -453,6 +450,7 @@ class FileMessage:
         os.remove(self.name)
 
 
+@implementer(IRealm)
 class MailService(service.MultiService):
     """
     An email service.
@@ -478,19 +476,17 @@ class MailService(service.MultiService):
     """
 
     queue = None
-    domains = None
-    portals = None
     aliases = None
     smtpPortal = None
 
-    def __init__(self):
+    def __init__(self) -> None:
         """
         Initialize the mail service.
         """
         service.MultiService.__init__(self)
         # Domains and portals for "client" protocols - POP3, IMAP4, etc
         self.domains = DomainWithDefaultDict({}, BounceDomain())
-        self.portals = {}
+        self.portals: dict[bytes, Portal] = {}
 
         self.monitor = FileMonitoringService()
         self.monitor.setServiceParent(self)
