@@ -333,15 +333,13 @@ class VirtualPOP3(pop3.POP3):
 
     def lookupDomain(self, user: bytes) -> tuple[bytes, bytes]:
         """
-        Check whether a domain is among the virtual domains supported by the
-        mail service.
+        Check whether a domain part of the given email address is among the
+        virtual domains supported by the mail service.
 
-        @type user: L{bytes}
         @param user: An email address.
 
-        @rtype: 2-L{tuple} of (L{bytes}, L{bytes})
-        @return: The local part and the domain part of the email address if the
-            domain is supported.
+        @return: a 2-tuple of (local part, domain part) of the email address if
+            the domain is supported.
 
         @raise POP3Error: When the domain is not supported by the mail service.
         """
