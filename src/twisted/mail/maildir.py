@@ -6,6 +6,7 @@
 """
 Maildir-style mailbox support.
 """
+from __future__ import annotations
 
 import io
 import os
