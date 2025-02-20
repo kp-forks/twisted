@@ -534,7 +534,8 @@ class MailService(service.MultiService):
         @param domain: A domain object.
         """
         portal = Portal(domain)
-        map(portal.registerChecker, domain.getCredentialsCheckers())
+        for checker in domain.getCredentialsCheckers():
+            portal.registerChecker(checker)
         self.domains[name] = domain
         self.portals[name] = portal
         if self.aliases and IAliasableDomain.providedBy(domain):
