@@ -10,6 +10,7 @@ Post-office Protocol version 3.
 @author: Glyph Lefkowitz
 @author: Jp Calderone
 """
+from __future__ import annotations
 
 import base64
 import binascii
