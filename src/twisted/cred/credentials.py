@@ -7,7 +7,7 @@ This module defines L{ICredentials}, an interface for objects that represent
 authentication credentials to provide, and also includes a number of useful
 implementations of that interface.
 """
-
+from __future__ import annotations
 
 import base64
 import hmac
