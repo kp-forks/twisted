@@ -19,6 +19,7 @@ import tempfile
 import textwrap
 import time
 from hashlib import md5
+from typing import NoReturn
 from unittest import skipIf
 
 from zope.interface import Interface, implementer
@@ -852,6 +853,14 @@ class StubAliasableDomain:
         Just record the value so the test can check it later.
         """
         self.aliasGroup = aliases
+
+    def requestAvatar(
+        self, avatarId: bytes | tuple[()], mind: object, *interfaces: type[Interface]
+    ) -> NoReturn:
+        """
+        Stub domains cannot authenticate users.
+        """
+        raise NotImplementedError()
 
 
 @skipIf(platformType != "posix", "twisted.mail only works on posix")
