@@ -10,14 +10,15 @@ from __future__ import annotations
 # System imports
 import os
 import warnings
+from typing import NoReturn
 
-from zope.interface import implementer
+from zope.interface import Interface, implementer
 
 from twisted.application import internet, service
 from twisted.cred.portal import IRealm, Portal
 from twisted.internet import defer
 from twisted.mail import protocols, smtp
-from twisted.mail.interfaces import IAliasableDomain, IDomain
+from twisted.mail.interfaces import IAlias, IAliasableDomain, IDomain
 from twisted.python import log, util
 
 
@@ -393,6 +394,14 @@ class BounceDomain:
         """
         return []
 
+    def requestAvatar(
+        self, avatarId: bytes | tuple[()], mind: object, *interfaces: type[Interface]
+    ) -> NoReturn:
+        """
+        Bounce domains cannot authenticate users.
+        """
+        raise NotImplementedError()
+
 
 @implementer(smtp.IMessage)
 class FileMessage:
@@ -464,11 +473,8 @@ class MailService(service.MultiService):
     @type portals: L{dict} of L{bytes} -> L{Portal}
     @ivar portals: A mapping of domain name to authentication portal.
 
-    @type aliases: L{None} or L{dict} of
-        L{bytes} -> L{IAlias} provider
     @ivar aliases: A mapping of domain name to alias.
 
-    @type smtpPortal: L{Portal}
     @ivar smtpPortal: A portal for authentication for the SMTP server.
 
     @type monitor: L{FileMonitoringService}
@@ -476,8 +482,8 @@ class MailService(service.MultiService):
     """
 
     queue = None
-    aliases = None
-    smtpPortal = None
+    aliases: dict[bytes, IAlias] | None = None
+    smtpPortal: Portal
 
     def __init__(self) -> None:
         """
@@ -519,14 +525,12 @@ class MailService(service.MultiService):
         """
         return protocols.ESMTPFactory(self, self.smtpPortal)
 
-    def addDomain(self, name, domain):
+    def addDomain(self, name: bytes, domain: IDomain) -> None:
         """
         Add a domain for which the service will accept email.
 
-        @type name: L{bytes}
         @param name: A domain name.
 
-        @type domain: L{IDomain} provider
         @param domain: A domain object.
         """
         portal = Portal(domain)

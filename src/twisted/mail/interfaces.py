@@ -10,6 +10,8 @@ Interfaces for L{twisted.mail}.
 
 from zope.interface import Interface
 
+from twisted.cred.portal import IRealm
+
 
 class IChallengeResponse(Interface):
     """
@@ -215,7 +217,7 @@ class IMailboxPOP3(Interface):
         """
 
 
-class IDomain(Interface):
+class IDomain(IRealm):
     """
     An interface for email domains.
     """

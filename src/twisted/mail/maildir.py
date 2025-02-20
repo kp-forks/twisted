@@ -12,9 +12,9 @@ import os
 import socket
 import stat
 from hashlib import md5
-from typing import IO
+from typing import IO, NoReturn
 
-from zope.interface import implementer
+from zope.interface import Interface, implementer
 
 from twisted.cred import checkers, credentials, portal
 from twisted.cred.error import UnauthorizedLogin
@@ -299,6 +299,14 @@ class AbstractMaildirDomain:
         @return: Credentials checkers for this domain.
         """
         raise NotImplementedError
+
+    def requestAvatar(
+        self, avatarId: bytes | tuple[()], mind: object, *interfaces: type[Interface]
+    ) -> NoReturn:
+        """
+        Abstract domains cannot authenticate users.
+        """
+        raise NotImplementedError()
 
 
 @implementer(interfaces.IConsumer)
