@@ -6,7 +6,7 @@ Interfaces for L{twisted.mail}.
 
 @since: 16.5
 """
-
+from __future__ import annotations
 
 from typing import overload
 
