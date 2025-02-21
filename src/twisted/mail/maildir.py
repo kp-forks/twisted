@@ -805,7 +805,7 @@ class MaildirDirdbmDomain(AbstractMaildirDomain):
             initializeMaildir(dir)
         return dir
 
-    def addUser(self, user, password):
+    def addUser(self, user: bytes, password: bytes) -> None:
         """
         Add a user to this domain by adding an entry in the authentication
         database and initializing the user's mail directory.

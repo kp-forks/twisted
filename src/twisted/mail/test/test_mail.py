@@ -729,7 +729,7 @@ class MaildirDirdbmDomainTests(TestCase):
     Tests for L{MaildirDirdbmDomain}.
     """
 
-    def setUp(self):
+    def setUp(self) -> None:
         """
         Create a temporary L{MaildirDirdbmDomain} and parent
         L{MailService} before running each test.
@@ -816,8 +816,7 @@ class MaildirDirdbmDomainTests(TestCase):
         creds = cred.credentials.UsernamePassword("user", "password")
         self.assertEqual(database.requestAvatarId(creds), "user")
 
-    @skipIf(sys.version_info >= (3,), "not ported to Python 3")
-    def test_userDirectory(self):
+    def test_userDirectory(self) -> None:
         """
         L{MaildirDirdbmDomain.userDirectory} is supplied with a user name
         and returns the path to that user's maildir subdirectory.
@@ -825,17 +824,18 @@ class MaildirDirdbmDomainTests(TestCase):
         non-existent user returns the 'postmaster' directory if there
         is a postmaster or returns L{None} if there is no postmaster.
         """
-        self.D.addUser("user", "password")
+        self.D.addUser(b"user", b"password")
         self.assertEqual(
-            self.D.userDirectory("user"), os.path.join(self.D.root, "user")
+            self.D.userDirectory(b"user"), os.path.join(self.D.root, b"user")
         )
 
         self.D.postmaster = False
-        self.assertIdentical(self.D.userDirectory("nouser"), None)
+        self.assertIdentical(self.D.userDirectory(b"nouser"), None)
 
         self.D.postmaster = True
         self.assertEqual(
-            self.D.userDirectory("nouser"), os.path.join(self.D.root, "postmaster")
+            self.D.userDirectory(b"nouser"),
+            os.path.join(self.D.root, b"postmaster"),
         )
 
 
