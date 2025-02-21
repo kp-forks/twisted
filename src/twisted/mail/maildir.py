@@ -13,7 +13,7 @@ import os
 import socket
 import stat
 from hashlib import md5
-from typing import IO, Callable, NoReturn, overload
+from typing import IO, Callable, overload
 
 from zope.interface import Interface, implementer
 
@@ -278,7 +278,7 @@ class AbstractMaildirDomain:
         """
         return False
 
-    def addUser(self, user: bytes, password: bytes) -> NoReturn:
+    def addUser(self, user: bytes, password: bytes) -> None:
         """
         Add a user to this domain.
 
