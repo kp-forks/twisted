@@ -1022,10 +1022,9 @@ class VirtualPOP3Tests(TestCase):
             cred.error.UnauthorizedLogin,
         )
 
-    @skipIf(sys.version_info >= (3,), "not ported to Python 3")
-    def testAuthenticateBadPasswordPASS(self):
+    def testAuthenticateBadPasswordPASS(self) -> Any:
         return self.assertFailure(
-            self.P.authenticateUserPASS("user", "wrong password"),
+            self.P.authenticateUserPASS(b"user", b"wrong password"),
             cred.error.UnauthorizedLogin,
         )
 
