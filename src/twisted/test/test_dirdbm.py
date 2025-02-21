@@ -30,6 +30,14 @@ class DirDbmTests(unittest.TestCase):
         self.dbm[k] = b"a"
         self.assertEqual(self.dbm[k], b"a")
 
+    def test_update(self) -> None:
+        """
+        L{DirDBM.update} updates the DBM with values from a bytes:bytes
+        mapping.
+        """
+        self.dbm.update({b"a": b"b", b"c": b"d"})
+        self.assertEqual(set(self.dbm.items()), {(b"a", b"b"), (b"c", b"d")})
+
     def test_rebuildInteraction(self) -> None:
         s = dirdbm.Shelf(b"dirdbm.rebuild.test")
         s[b"key"] = b"value"
