@@ -20,7 +20,7 @@ import tempfile
 import textwrap
 import time
 from hashlib import md5
-from typing import NoReturn
+from typing import Any, NoReturn
 from unittest import skipIf
 
 from zope.interface import Interface, implementer
@@ -50,6 +50,7 @@ from twisted.internet.testing import (
     StringTransport,
 )
 from twisted.mail import pop3, smtp
+from twisted.mail.maildir import MaildirMailbox
 from twisted.mail.relaymanager import _AttemptManager
 from twisted.names import dns
 from twisted.names.dns import Record_CNAME, Record_MX, RRHeader
@@ -458,23 +459,23 @@ class _AppendTestMixin:
     for serially appending multiple messages to a mailbox.
     """
 
-    def _appendMessages(self, mbox, messages):
+    def _appendMessages(
+        self, mbox: twisted.mail.maildir.MaildirMailbox, messages: list[bytes]
+    ) -> Deferred[list[None]]:
         """
         Deliver the given messages one at a time.  Delivery is serialized to
         guarantee a predictable order in the mailbox (overlapped message deliver
         makes no guarantees about which message which appear first).
         """
-        results = []
 
-        def append():
+        async def append() -> list[None]:
+            results: list[None] = []
             for m in messages:
-                d = mbox.appendMessage(m)
-                d.addCallback(results.append)
-                yield d
+                await mbox.appendMessage(m)
+                results.append(None)
+            return results
 
-        d = task.cooperate(append()).whenDone()
-        d.addCallback(lambda ignored: results)
-        return d
+        return Deferred.fromCoroutine(append())
 
 
 @skipIf(platformType != "posix", "twisted.mail only works on posix")
@@ -483,12 +484,12 @@ class MaildirAppendStringTests(TestCase, _AppendTestMixin):
     Tests for L{MaildirMailbox.appendMessage} when invoked with a C{str}.
     """
 
-    def setUp(self):
-        self.d = self.mktemp()
+    def setUp(self) -> None:
+        self.d = os.fsencode(self.mktemp())
         mail.maildir.initializeMaildir(self.d)
 
-    def _append(self, ignored, mbox):
-        d = mbox.appendMessage("TEST")
+    def _append(self, ignored: object, mbox: MaildirMailbox) -> Deferred[None]:
+        d = mbox.appendMessage(b"TEST")
         return self.assertFailure(d, Exception)
 
     def _setState(self, ignored, mbox, rename=None, write=None, open=None):
@@ -526,8 +527,7 @@ class MaildirAppendStringTests(TestCase, _AppendTestMixin):
             )
             mbox.AppendFactory._openstate = open
 
-    @skipIf(sys.version_info >= (3,), "not ported to Python 3")
-    def test_append(self):
+    def test_append(self) -> Any:
         """
         L{MaildirMailbox.appendMessage} returns a L{Deferred} which fires when
         the message has been added to the end of the mailbox.
@@ -535,10 +535,29 @@ class MaildirAppendStringTests(TestCase, _AppendTestMixin):
         mbox = mail.maildir.MaildirMailbox(self.d)
         mbox.AppendFactory = FailingMaildirMailboxAppendMessageTask
 
-        d = self._appendMessages(mbox, ["X" * i for i in range(1, 11)])
+        d = self._appendMessages(mbox, [b"X" * i for i in range(1, 11)])
         d.addCallback(self.assertEqual, [None] * 10)
         d.addCallback(self._cbTestAppend, mbox)
         return d
+
+    def test_reopenMailbox(self) -> Any:
+        """
+        Appending a message, then re-opening the mailbox by creating a new
+        MaildirMailbox, should result in seeing the message as loadable.
+        """
+
+        async def go() -> None:
+            mbox1 = mail.maildir.MaildirMailbox(self.d)
+            sample = b"xyzzy"
+            await mbox1.appendMessage(sample)
+            mbox2 = mail.maildir.MaildirMailbox(self.d)
+            listed = mbox2.listMessages()
+            self.assertEqual(len(listed), 1)
+            [messageSize] = listed
+            self.assertEqual(messageSize, len(sample))
+            self.assertEqual(mbox2.getMessage(0).read(), sample.decode())
+
+        return Deferred.fromCoroutine(go())
 
     def _cbTestAppend(self, ignored, mbox):
         """

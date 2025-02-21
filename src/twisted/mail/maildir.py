@@ -13,7 +13,7 @@ import os
 import socket
 import stat
 from hashlib import md5
-from typing import IO, Callable, NoReturn
+from typing import IO, Callable, NoReturn, overload
 
 from zope.interface import Interface, implementer
 
@@ -22,6 +22,7 @@ from twisted.cred.credentials import IUsernameHashedPassword, IUsernamePassword
 from twisted.cred.error import UnauthorizedLogin
 from twisted.internet import defer, interfaces, reactor
 from twisted.internet.defer import Deferred, succeed
+from twisted.internet.interfaces import IProducer
 from twisted.mail import mail, pop3, smtp
 from twisted.mail.alias import AliasBase
 from twisted.mail.mail import MailService
@@ -65,7 +66,7 @@ class _MaildirNameGenerator:
         """
         self._clock = clock
 
-    def generate(self):
+    def generate(self) -> bytes:
         """
         Generate a string which is intended to be unique across all calls to
         this function (across all processes, reboots, etc).
@@ -81,28 +82,31 @@ class _MaildirNameGenerator:
         t = self._clock.seconds()
         seconds = str(int(t))
         microseconds = "%07d" % (int((t - int(t)) * 10e6),)
-        return f"{seconds}.M{microseconds}P{self.p}Q{self.n}.{self.s}"
+        return os.fsencode(f"{seconds}.M{microseconds}P{self.p}Q{self.n}.{self.s}")
 
 
 _generateMaildirName = _MaildirNameGenerator(reactor).generate
 
 
-def initializeMaildir(dir):
+def initializeMaildir(dir: bytes | str) -> None:
     """
     Create a maildir user directory if it doesn't already exist.
 
-    @type dir: L{bytes}
     @param dir: The path name for a user directory.
     """
-    dir = os.fsdecode(dir)
-    if not os.path.isdir(dir):
-        os.mkdir(dir, 0o700)
-        for subdir in ["new", "cur", "tmp", ".Trash"]:
-            os.mkdir(os.path.join(dir, subdir), 0o700)
-        for subdir in ["new", "cur", "tmp"]:
-            os.mkdir(os.path.join(dir, ".Trash", subdir), 0o700)
+    bdir: bytes
+    if isinstance(dir, bytes):
+        bdir = dir
+    else:
+        bdir = os.fsencode(dir)
+    if not os.path.isdir(bdir):
+        os.mkdir(bdir, 0o700)
+        for subdir in [b"new", b"cur", b"tmp", b".Trash"]:
+            os.mkdir(os.path.join(bdir, subdir), 0o700)
+        for subdir in [b"new", b"cur", b"tmp"]:
+            os.mkdir(os.path.join(bdir, b".Trash", subdir), 0o700)
         # touch
-        open(os.path.join(dir, ".Trash", "maildirfolder"), "w").close()
+        open(os.path.join(bdir, b".Trash", b"maildirfolder"), "w").close()
 
 
 class MaildirMessage(mail.FileMessage):
@@ -348,7 +352,7 @@ class _MaildirMailboxAppendMessageTask:
     osclose = staticmethod(os.close)
     osrename = staticmethod(os.rename)
 
-    def __init__(self, mbox, msg):
+    def __init__(self, mbox: MaildirMailbox, msg: bytes | IO[bytes]) -> None:
         """
         @type mbox: L{MaildirMailbox}
         @param mbox: A maildir mailbox.
@@ -357,13 +361,13 @@ class _MaildirMailboxAppendMessageTask:
         @param msg: The message to add.
         """
         self.mbox = mbox
-        self.defer = defer.Deferred()
+        self.defer: defer.Deferred[None] = defer.Deferred()
         self.openCall = None
         if not hasattr(msg, "read"):
             msg = io.BytesIO(msg)
         self.msg = msg
 
-    def startUp(self):
+    def startUp(self) -> None:
         """
         Start transferring the message to the mailbox.
         """
@@ -372,15 +376,13 @@ class _MaildirMailboxAppendMessageTask:
             self.filesender = basic.FileSender()
             self.filesender.beginFileTransfer(self.msg, self)
 
-    def registerProducer(self, producer, streaming):
+    def registerProducer(self, producer: IProducer, streaming: bool) -> None:
         """
         Register a producer and start asking it for data if it is
         non-streaming.
 
-        @type producer: L{IProducer <interfaces.IProducer>}
         @param producer: A producer.
 
-        @type streaming: L{bool}
         @param streaming: A flag indicating whether the producer provides a
             streaming interface.
         """
@@ -407,11 +409,10 @@ class _MaildirMailboxAppendMessageTask:
         self.osclose(self.fh)
         self.moveFileToNew()
 
-    def write(self, data):
+    def write(self, data: bytes) -> None:
         """
         Write data to the maildir file.
 
-        @type data: L{bytes}
         @param data: Data to be written to the file.
         """
         try:
@@ -440,7 +441,7 @@ class _MaildirMailboxAppendMessageTask:
         successfully.
         """
         while True:
-            newname = os.path.join(self.mbox.path, "new", _generateMaildirName())
+            newname = os.path.join(self.mbox.path, b"new", _generateMaildirName())
             try:
                 self.osrename(self.tmpname, newname)
                 break
@@ -472,7 +473,7 @@ class _MaildirMailboxAppendMessageTask:
         tries = 0
         self.fh = -1
         while True:
-            self.tmpname = os.path.join(self.mbox.path, "tmp", _generateMaildirName())
+            self.tmpname = os.path.join(self.mbox.path, b"tmp", _generateMaildirName())
             try:
                 self.fh = self.osopen(self.tmpname, attr, 0o600)
                 return None
@@ -519,6 +520,14 @@ class MaildirMailbox(pop3.Mailbox):
         computing.sort()
         self.list: list[int | bytes] = [el[1] for el in computing]
 
+    @overload
+    def listMessages(self) -> list[int]:
+        ...
+
+    @overload
+    def listMessages(self, i: int) -> int:
+        ...
+
     def listMessages(self, i: int | None = None) -> int | list[int]:
         """
         Retrieve the size of a message, or, if none is specified, the size of
@@ -546,7 +555,7 @@ class MaildirMailbox(pop3.Mailbox):
             return ret
         return self.list[i] and os.stat(self.list[i])[stat.ST_SIZE] or 0
 
-    def getMessage(self, i):
+    def getMessage(self, i: int) -> IO[str]:
         """
         Retrieve a file-like object with the contents of a message.
 
@@ -624,16 +633,14 @@ class MaildirMailbox(pop3.Mailbox):
                     self.list.append(real)
         self.deleted.clear()
 
-    def appendMessage(self, txt):
+    def appendMessage(self, txt: bytes | IO[bytes]) -> Deferred[None]:
         """
         Add a message to the mailbox.
 
-        @type txt: L{bytes} or file-like object
         @param txt: A message to add.
 
-        @rtype: L{Deferred <defer.Deferred>}
-        @return: A deferred which fires when the message has been added to
-            the mailbox.
+        @return: A deferred which fires when the message has been added to the
+            mailbox.
         """
         task = self.AppendFactory(self, txt)
         result = task.defer

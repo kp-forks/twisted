@@ -16,7 +16,7 @@ import base64
 import binascii
 import warnings
 from hashlib import md5
-from typing import IO, Optional, Sequence
+from typing import IO, Optional, overload
 
 from zope.interface import implementer
 
@@ -1331,9 +1331,15 @@ class Mailbox:
     A base class for mailboxes.
     """
 
-    def listMessages(
-        self, i: int | None = None
-    ) -> int | Sequence[int] | defer.Deferred[int] | defer.Deferred[Sequence[int]]:
+    @overload
+    def listMessages(self) -> list[int]:
+        ...
+
+    @overload
+    def listMessages(self, i: int) -> int:
+        ...
+
+    def listMessages(self, i: int | None = None) -> int | list[int]:
         """
         Retrieve the size of a message, or, if none is specified, the size of
         each message in the mailbox.
@@ -1353,7 +1359,7 @@ class Mailbox:
         """
         return []
 
-    def getMessage(self, i: int) -> IO[bytes]:
+    def getMessage(self, i: int) -> IO[str]:
         """
         Retrieve a file containing the contents of a message.
 
