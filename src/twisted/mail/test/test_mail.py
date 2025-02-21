@@ -1016,10 +1016,9 @@ class VirtualPOP3Tests(TestCase):
         self.assertTrue(pop3.IMailbox.providedBy(result[1]))
         result[2]()
 
-    @skipIf(sys.version_info >= (3,), "not ported to Python 3")
-    def testAuthenticateBadUserPASS(self):
+    def testAuthenticateBadUserPASS(self) -> Any:
         return self.assertFailure(
-            self.P.authenticateUserPASS("resu", "password"),
+            self.P.authenticateUserPASS(b"resu", b"password"),
             cred.error.UnauthorizedLogin,
         )
 
