@@ -352,9 +352,14 @@ class ProcessMonitor(service.Service):
         @param reason: The reason why the connection was lost.
         """
         # Log a warning if reason is something other than ProcessDone
-        if reason and not reason.check(error.ProcessDone):
-            self.log.warn(
-                "Process '{name}' has exited: {reason!r}", name=name, reason=reason
+        if reason is not None and not reason.check(
+            error.ProcessDone,
+            error.ProcessTerminated,
+        ):
+            self.log.failure(
+                "Process '{name}' has exited: {failure!r}",
+                failure=reason,
+                name=name,
             )
         # Cancel the scheduled _forceStopProcess function if the process
         # dies naturally

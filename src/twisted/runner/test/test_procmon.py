@@ -305,6 +305,7 @@ class ProcmonTests(unittest.TestCase):
         self.pm.startProcess("foo")
         # process will be restarted in 123 seconds, per minRestartDelay and maxRestartDelay above
         self.assertEquals(self.pm.delay["foo"], 123)
+        self.assertEquals(len(self.flushLoggedErrors(OSError)), 1)
 
     def test_startProcessSpawnUncaughtException(self) -> None:
         """
