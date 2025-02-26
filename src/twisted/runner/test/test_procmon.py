@@ -4,6 +4,8 @@
 """
 Tests for L{twisted.runner.procmon}.
 """
+from __future__ import annotations
+
 import errno
 import os
 import pickle
