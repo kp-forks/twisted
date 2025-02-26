@@ -106,11 +106,14 @@ class DummyProcessReactor(MemoryReactor, Clock):
     @ivar spawnProcessException: An exception which spawnProcess() will raise.
     """
 
+    spawnedProcesses: list[DummyProcess]
+    spawnProcessException: Exception | None
+
     def __init__(self) -> None:
         MemoryReactor.__init__(self)
         Clock.__init__(self)
-        self.spawnedProcesses: list[DummyProcess] = []
-        self.spawnProcessException: Exception | None = None
+        self.spawnedProcesses = []
+        self.spawnProcessException = None
 
     def spawnProcess(
         self,
@@ -679,7 +682,6 @@ class ProcmonTests(unittest.TestCase):
 
 
 class DeprecationTests(unittest.SynchronousTestCase):
-
     """
     Tests that check functionality that should be deprecated is deprecated.
     """
