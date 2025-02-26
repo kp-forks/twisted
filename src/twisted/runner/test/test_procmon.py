@@ -7,8 +7,12 @@ Tests for L{twisted.runner.procmon}.
 import errno
 import os
 import pickle
+from typing import AnyStr, Mapping, Optional, Sequence, Union
+
+from zope.interface import implementer
 
 from twisted.internet.error import ProcessDone, ProcessExitedAlready, ProcessTerminated
+from twisted.internet.interfaces import IProcessProtocol, IProcessTransport
 from twisted.internet.task import Clock
 from twisted.internet.testing import MemoryReactor
 from twisted.logger import globalLogPublisher
@@ -17,7 +21,8 @@ from twisted.runner.procmon import LoggingProtocol, ProcessMonitor
 from twisted.trial import unittest
 
 
-class DummyProcess:
+@implementer(IProcessTransport)
+class DummyProcess:  # type:ignore[misc]
     """
     An incomplete and fake L{IProcessTransport} implementation for testing how
     L{ProcessMonitor} behaves when its monitored processes exit.
@@ -95,32 +100,28 @@ class DummyProcessReactor(MemoryReactor, Clock):
     """
     @ivar spawnedProcesses: a list that keeps track of the fake process
         instances built by C{spawnProcess}.
-    @type spawnedProcesses: C{list}
 
     @ivar spawnProcessException: An exception which spawnProcess() will raise.
-    @type spawnProcessException: C{Exception}
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         MemoryReactor.__init__(self)
         Clock.__init__(self)
-
-        self.spawnedProcesses = []
-
+        self.spawnedProcesses: list[DummyProcess] = []
         self.spawnProcessException: Exception | None = None
 
     def spawnProcess(
         self,
-        processProtocol,
-        executable,
-        args=(),
-        env={},
-        path=None,
-        uid=None,
-        gid=None,
-        usePTY=0,
-        childFDs=None,
-    ):
+        processProtocol: IProcessProtocol,
+        executable: Union[bytes, str],
+        args: Sequence[Union[bytes, str]],
+        env: Optional[Mapping[AnyStr, AnyStr]] = None,
+        path: Union[None, bytes, str] = None,
+        uid: Optional[int] = None,
+        gid: Optional[int] = None,
+        usePTY: bool = False,
+        childFDs: Optional[Mapping[int, Union[int, str]]] = None,
+    ) -> IProcessTransport:
         """
         Fake L{reactor.spawnProcess}, that logs all the process
         arguments and returns a L{DummyProcess}.
