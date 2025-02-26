@@ -5,6 +5,8 @@
 """
 Support for starting, monitoring, and restarting child process.
 """
+from __future__ import annotations
+
 from typing import Dict, List, Optional
 
 import attr
@@ -76,6 +78,13 @@ transport = DummyTransport()
 
 
 class LineLogger(basic.LineReceiver):
+    tag: str
+    stream: str
+    service: ProcessMonitor
+    delimiter: bytes
+
+    # These really ought to be set by a constructor, but the legacy API is a
+    # no-argument constructor.
     tag = None
     stream = None
     delimiter = b"\n"
@@ -93,10 +102,15 @@ class LineLogger(basic.LineReceiver):
 
 
 class LoggingProtocol(protocol.ProcessProtocol):
+    service: ProcessMonitor
+    name: str
+
+    # These really ought to be set by a constructor, but the legacy API is a
+    # no-argument constructor.
     service = None
     name = None
 
-    def connectionMade(self):
+    def connectionMade(self) -> None:
         self._output = LineLogger()
         self._output.tag = self.name
         self._output.stream = "stdout"
@@ -120,12 +134,12 @@ class LoggingProtocol(protocol.ProcessProtocol):
         self._error.dataReceived(data)
         self._errorEmpty = data[-1] == b"\n"
 
-    def processEnded(self, reason):
+    def processEnded(self, reason: Failure) -> None:
         if not self._outputEmpty:
             self._output.dataReceived(b"\n")
         if not self._errorEmpty:
             self._error.dataReceived(b"\n")
-        self.service.processExit(self.name, reason)
+        self.service._monitoredProcessExited(self.name, reason)
 
     @property
     def output(self):
@@ -288,40 +302,36 @@ class ProcessMonitor(service.Service):
             self.stopProcess(name)
 
     @deprecate.deprecatedProperty(incremental.Version("Twisted", "NEXT", 0, 0))
-    def connectionLost(self, name):
+    def connectionLost(self, name: str) -> None:
         """
-        Called when a monitored processes exits. If
+        Called when a monitored processes exits.  If
         L{service.IService.running} is L{True} (ie the service is started), the
-        process will be restarted.
-        If the process had been running for more than
-        L{ProcessMonitor.threshold} seconds it will be restarted immediately.
-        If the process had been running for less than
+        process will be restarted.  If the process had been running for more
+        than L{ProcessMonitor.threshold} seconds it will be restarted
+        immediately.  If the process had been running for less than
         L{ProcessMonitor.threshold} seconds, the restart will be delayed and
         each time the process dies before the configured threshold, the restart
         delay will be doubled - up to a maximum delay of maxRestartDelay sec.
 
-        @type name: C{str}
-        @param name: A string that uniquely identifies the process
-            which exited.
+        @param name: A string that uniquely identifies the process which
+            exited.
         """
-        return self.processExit(name)  # pragma: no cover
+        return self._monitoredProcessExited(name)  # pragma: no cover
 
-    def processExit(self, name, reason=None):
+    def _monitoredProcessExited(self, name: str, reason: Failure | None = None) -> None:
         """
-        Called when a monitored processes exits. If
+        Called when a monitored processes exits.  If
         L{service.IService.running} is L{True} (ie the service is started), the
-        process will be restarted.
-        If the process had been running for more than
-        L{ProcessMonitor.threshold} seconds it will be restarted immediately.
-        If the process had been running for less than
+        process will be restarted.  If the process had been running for more
+        than L{ProcessMonitor.threshold} seconds it will be restarted
+        immediately.  If the process had been running for less than
         L{ProcessMonitor.threshold} seconds, the restart will be delayed and
         each time the process dies before the configured threshold, the restart
         delay will be doubled - up to a maximum delay of maxRestartDelay sec.
 
-        @type name: C{str}
-        @param name: A string that uniquely identifies the process
-            which exited.
-        @type reason: C{Failure}
+        @param name: A string that uniquely identifies the process which
+            exited.
+
         @param reason: The reason why the connection was lost.
         """
         # Log a warning if reason is something other than ProcessDone
