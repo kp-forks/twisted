@@ -621,7 +621,6 @@ module = [
     'twisted.python.win32',
     'twisted.python.zipstream',
     'twisted.runner.inetd',
-    'twisted.runner.procmon',
     'twisted.runner.test.test_procmon',
     'twisted.scripts._twistd_unix',
     'twisted.scripts.test.test_scripts',
