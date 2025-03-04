@@ -101,13 +101,15 @@ jobs:
 
           # `nodeps` is created to make sure we don't have import errors in the
           # runtime and production code.
+
           # The minimum supported Python version should be used to maximize
           # coverage of code that otherwise depends on backports.
+
           # Distributed test run is disabled here so that we also have
           # end to end functional test usage for non-distributed trial runs.
           # When updating the minimum Python version here, also update the
           # `python_requires` from `setup.cfg`.
-          - python-version: '3.8.0'
+          - python-version: '3.8.18'
             tox-env: 'nodeps-withcov-posix'
             job-name: 'nodeps-test'
             # Older python is only on 20.04.
