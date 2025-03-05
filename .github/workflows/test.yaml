@@ -109,7 +109,11 @@ jobs:
           # end to end functional test usage for non-distributed trial runs.
           # When updating the minimum Python version here, also update the
           # `python_requires` from `setup.cfg`.
-          - python-version: '3.8.18'
+          # Here we should have the oldest Python version supported 
+          # by GitHub. The availability of the Python version
+          # depends on the version of Ubuntu in use. 
+          # See https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json
+          - python-version: '3.8.12'
             tox-env: 'nodeps-withcov-posix'
             job-name: 'nodeps-test'
             runs-on: 'ubuntu-22.04'
