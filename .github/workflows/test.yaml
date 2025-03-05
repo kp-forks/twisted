@@ -112,7 +112,6 @@ jobs:
           - python-version: '3.8.18'
             tox-env: 'nodeps-withcov-posix'
             job-name: 'nodeps-test'
-            # Older python is only on 20.04.
             runs-on: 'ubuntu-22.04'
 
           # `noipv6` is created to make sure all is OK on an OS which doesn't
