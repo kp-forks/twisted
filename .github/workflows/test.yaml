@@ -101,17 +101,22 @@ jobs:
 
           # `nodeps` is created to make sure we don't have import errors in the
           # runtime and production code.
+
           # The minimum supported Python version should be used to maximize
           # coverage of code that otherwise depends on backports.
+
           # Distributed test run is disabled here so that we also have
           # end to end functional test usage for non-distributed trial runs.
           # When updating the minimum Python version here, also update the
           # `python_requires` from `setup.cfg`.
-          - python-version: '3.8.0'
+          # Here we should have the oldest Python version supported 
+          # by GitHub. The availability of the Python version
+          # depends on the version of Ubuntu in use. 
+          # See https://raw.githubusercontent.com/actions/python-versions/main/versions-manifest.json
+          - python-version: '3.8.12'
             tox-env: 'nodeps-withcov-posix'
             job-name: 'nodeps-test'
-            # Older pyhon is only on 20.04.
-            runs-on: 'ubuntu-20.04'
+            runs-on: 'ubuntu-22.04'
 
           # `noipv6` is created to make sure all is OK on an OS which doesn't
           # have IPv6 available.
